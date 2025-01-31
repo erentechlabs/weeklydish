@@ -11,8 +11,11 @@ Additionally, users can request AI-generated recipes for any dish, with allergen
 A shopping list can also be created based on the planned menu, making meal prep even more convenient.
 
 ## Screenshots
-![1](https://github.com/user-attachments/assets/2750739c-cea3-4d96-ae6c-6df9056540c2)
-![2](https://github.com/user-attachments/assets/bf828476-fa49-4e14-abe0-50eefd8f4845)
-![3](https://github.com/user-attachments/assets/03f1a74c-ebd4-47ab-9e8f-dcdec5aa9c8c)
-![4](https://github.com/user-attachments/assets/eb362b34-ffe3-4d7c-a135-1ef075f31567)
-![5](https://github.com/user-attachments/assets/b8bac0b2-c892-4a07-8434-7e377f05a6c9)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2750739c-cea3-4d96-ae6c-6df9056540c2" width="200" />
+  <img src="https://github.com/user-attachments/assets/bf828476-fa49-4e14-abe0-50eefd8f4845" width="200" />
+  <img src="https://github.com/user-attachments/assets/03f1a74c-ebd4-47ab-9e8f-dcdec5aa9c8c" width="200" />
+  <img src="https://github.com/user-attachments/assets/eb362b34-ffe3-4d7c-a135-1ef075f31567" width="200" />
+  <img src="https://github.com/user-attachments/assets/b8bac0b2-c892-4a07-8434-7e377f05a6c9" width="200" />
+</p>
+
