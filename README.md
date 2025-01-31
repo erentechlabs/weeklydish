@@ -1,17 +1,18 @@
-# weeklydish
+# Weekly Dish
 
 A new meal planner app.
 
-## Getting Started
+## Description
 
-This project is a starting point for a Flutter application.
+Users can plan their weekly meals across six categories: breakfast, lunch, dinner, and snacks for each. They can add dishes day by day or all at once, with the app automatically generating a complete menu with a single click. Each entry can be updated or deleted as needed. 
 
-A few resources to get you started if this is your first Flutter project:
+Additionally, users can request AI-generated recipes for any dish, with allergen warnings included if they have specified dietary restrictions. 
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+A shopping list can also be created based on the planned menu, making meal prep even more convenient.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# weeklydish
+## Screenshots
+![1](https://github.com/user-attachments/assets/2750739c-cea3-4d96-ae6c-6df9056540c2)
+![2](https://github.com/user-attachments/assets/bf828476-fa49-4e14-abe0-50eefd8f4845)
+![3](https://github.com/user-attachments/assets/03f1a74c-ebd4-47ab-9e8f-dcdec5aa9c8c)
+![4](https://github.com/user-attachments/assets/eb362b34-ffe3-4d7c-a135-1ef075f31567)
+![5](https://github.com/user-attachments/assets/b8bac0b2-c892-4a07-8434-7e377f05a6c9)
