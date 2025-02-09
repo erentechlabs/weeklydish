@@ -8,15 +8,13 @@ Weekly Dish - Your Ultimate Meal Planner & Kitchen Companion 🍴🤖
 
 Tired of the daily struggle of “what should I cook today?” Weekly Dish is here to simplify meal planning and make cooking fun again! This easy-to-use app helps you organize your meals, discover new recipes, and track nutritional info — all in one place.
 
-Key Features:
-🍽️ Instant Meal Planning – Plan your meals in 6 categories: Breakfast, Lunch, Dinner, and Snacks for all meals.
-🍳 AI Chef Suggestions – Not sure what to cook? Get meal ideas based on ingredients you have.
-📊 Nutritional Info – Track calories, fat, protein, and carbs for each meal.
-🔄 Full Control – Add, edit, or remove meals from your weekly menu with ease.
-🛒 Shopping Lists – Create shopping lists for your meals with just one tap!
-⚠️ Allergen Alerts – Avoid allergens in recipes, with alternative suggestions.
-
-Enjoy seamless meal planning, recipe suggestions, and grocery shopping — all in one app. With Weekly Dish, you’re in charge of your meals like never before.
+## Key Features:
+- 🍽️ **Instant Meal Planning** – Plan your meals in 6 categories: Breakfast, Lunch, Dinner, and Snacks for all meals.
+- 🍳 **AI Chef Suggestions** – Not sure what to cook? Get meal ideas based on ingredients you have.
+- 📊 **Nutritional Info** – Track calories, fat, protein, and carbs for each meal.
+- 🔄 **Full Control** – Add, edit, or remove meals from your weekly menu with ease.
+- 🛒 **Shopping Lists** – Create shopping lists for your meals with just one tap!
+- ⚠️ **Allergen Alerts** – Avoid allergens in recipes, with alternative suggestions.
 
 ## Screenshots
 <p align="center" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
