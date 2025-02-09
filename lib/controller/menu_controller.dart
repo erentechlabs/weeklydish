@@ -16,6 +16,10 @@ class MenusController {
     DateTime datetime,
     String content,
     String recipe,
+    int calories,
+    int protein,
+    int fat,
+    int carbs,
     bool isRecipeUpdated,
     bool isAllergensUpdated,
   ) async {
@@ -26,10 +30,20 @@ class MenusController {
             datetime: Value(datetime),
             content: Value(content),
             recipe: Value(recipe),
-            isRecipeUpdated: Value(isRecipeUpdated),
+            calories: Value(calories),
+            protein: Value(protein),
+            fat: Value(fat),
+            carbohydrate: Value(carbs),
+            isMenuDetailUpdate: Value(isRecipeUpdated),
             isAllergensUpdated: Value(isAllergensUpdated),
           ),
         );
+  }
+
+  // Fetch all menu items by date
+  Future<List<MenuData>> fetchItemsByDate(DateTime date) async {
+    return await (db.select(db.menu)..where((tbl) => tbl.datetime.equals(date)))
+        .get();
   }
 
   // Fetch all menu items
@@ -106,7 +120,7 @@ class MenusController {
             datetime: Value(datetime),
             content: Value(content),
             recipe: Value(recipe),
-            isRecipeUpdated: Value(isRecipeUpdated),
+            isMenuDetailUpdate: Value(isRecipeUpdated),
             isAllergensUpdated: Value(isAllergensUpdated),
           ),
         );
@@ -118,18 +132,23 @@ class MenusController {
     await (db.update(db.menu)..where((tbl) => tbl.id.equals(id))).write(
       MenuCompanion(
         content: Value(newContent),
-        isRecipeUpdated: Value(isRecipeUpdate),
+        isMenuDetailUpdate: Value(isRecipeUpdate),
       ),
     );
   }
 
   // Update recipe of a menu item
-  Future<void> updateMenuRecipe(int id, String newRecipe, bool isRecipeUpdate,
+  Future<void> updateMenuDetails (int id, String newRecipe, bool isRecipeUpdate,
+      int calories, int protein, int fat, int carbs,
       bool isAllergensUpdate) async {
     await (db.update(db.menu)..where((tbl) => tbl.id.equals(id))).write(
       MenuCompanion(
         recipe: Value(newRecipe),
-        isRecipeUpdated: Value(isRecipeUpdate),
+        calories: Value(calories),
+        protein: Value(protein),
+        fat: Value(fat),
+        carbohydrate: Value(carbs),
+        isMenuDetailUpdate: Value(isRecipeUpdate),
         isAllergensUpdated: Value(isAllergensUpdate),
       ),
     );

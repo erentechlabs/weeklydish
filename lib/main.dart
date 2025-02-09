@@ -6,11 +6,13 @@ import 'package:weeklydish/theme/theme.dart';
 import 'package:weeklydish/view/others/nav_page.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+// App Open Ad
 AppOpenAd? appOpenAd;
 
+// Load the app open ad
 loadAppOpenAdd() {
   AppOpenAd.load(
-      adUnitId: "ADD YOUR APP OPEN AD ID HERE",
+      adUnitId: "ca-app-pub-6150876719010892/1317100809",
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
           onAdLoaded: (ad) {

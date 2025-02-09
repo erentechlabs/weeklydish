@@ -1,14 +1,19 @@
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:weeklydish/controller/allergen_controller.dart';
+import 'package:weeklydish/view/ai_page/ai_page.dart';
 import '../../controller/menu_controller.dart';
 import '../../database/app_database.dart';
+import '../../extension/generative_model.dart';
+import '../../model/nutrition_data.dart';
 import '../custom_ui/ads_dialog.dart';
+import '../custom_ui/nutrition_chart.dart';
 import '../custom_ui/recipe_dialog.dart';
 import '../custom_ui/show_delete_dialog.dart';
 
@@ -52,6 +57,9 @@ class _MenuPageState extends State<MenuPage> {
   // Dinner desserts
   List<MenuData> dinnerDesserts = [];
 
+  // Nutrition values
+  List<int> nutritionValues = [];
+
   // Track loading state
   bool loading = false;
 
@@ -70,6 +78,64 @@ class _MenuPageState extends State<MenuPage> {
   // Boolean variable to check if the ad is loaded
   bool _isLoaded = false;
 
+  // Nutrition data
+  List<NutritionData> _nutritionData = [];
+
+  // Function to calculate daily nutrition
+  Future<void> _calculateDailyNutrition() async {
+    // Get the selected day
+    DateTime selectedDay = _selectedDay!;
+
+    // Fetch all items by date
+    List<MenuData> allItems =
+        await menuController.fetchItemsByDate(selectedDay);
+
+    // Initialize the total nutrition values for calories
+    int totalCalories = 0;
+
+    // Initialize the total nutrition values for protein
+    int totalProtein = 0;
+
+    // Initialize the total nutrition values for fat
+    int totalFat = 0;
+
+    // Initialize the total nutrition values for carbohydrates
+    int totalCarbs = 0;
+
+    // Loop through all items
+    for (var item in allItems) {
+      // Add the calories
+      totalCalories += item.calories;
+
+      // Add the protein
+      totalProtein += item.protein;
+
+      // Add the fat
+      totalFat += item.fat;
+
+      // Add the carbohydrates
+      totalCarbs += item.carbohydrate;
+    }
+
+    // Set the nutrition data
+    setState(() {
+      // Set the nutrition data
+      _nutritionData = [
+        // Nutrition data for calories
+        NutritionData('calories'.tr(), totalCalories, Colors.purple),
+
+        // Nutrition data for protein
+        NutritionData('protein'.tr(), totalProtein, Colors.purple[300]!),
+
+        // Nutrition data for fat
+        NutritionData('fat'.tr(), totalFat, Colors.purple[200]!),
+
+        // Nutrition data for carbohydrates
+        NutritionData('carbohydrates'.tr(), totalCarbs, Colors.purple[100]!),
+      ];
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -84,17 +150,7 @@ class _MenuPageState extends State<MenuPage> {
     createInterstitialAd();
 
     // Initialize the generative model
-    model = GenerativeModel(
-      model: 'gemini-1.5-flash-8b',
-      apiKey: 'ADD YOUR API KEY HERE',
-      generationConfig: GenerationConfig(
-        temperature: 1,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-        responseMimeType: 'text/plain',
-      ),
-    );
+    model = generativeModel();
 
     // Start chat session
     chatSession = model.startChat();
@@ -137,9 +193,7 @@ class _MenuPageState extends State<MenuPage> {
       size: AdSize.banner,
 
       // Ad unit ID for the banner ad
-      adUnitId: Platform.isAndroid
-          ? 'ADD YOUR ANDROID AD UNIT ID HERE'
-          : 'ADD YOUR IOS AD UNIT ID HERE',
+      adUnitId:  "API_KEY",
 
       // Banner ad listener
       listener: BannerAdListener(
@@ -171,9 +225,7 @@ class _MenuPageState extends State<MenuPage> {
     // Initialize the interstitial ad
     InterstitialAd.load(
       // Set the ad unit id
-      adUnitId: Platform.isAndroid
-          ? 'ADD YOUR ANDROID AD UNIT ID HERE'
-          : 'ADD YOUR IOS AD UNIT ID HERE',
+      adUnitId:  "API_KEY",
 
       // Set the ad
       request: const AdRequest(),
@@ -208,13 +260,23 @@ class _MenuPageState extends State<MenuPage> {
     }
   }
 
+  // Extract nutrition values from the response
+  List<int> extractAverageNutritionValues(String response) {
+    final RegExp regex = RegExp(r'\d+-\d+');
+    final matches = regex.allMatches(response);
+
+    return matches.map((match) {
+      final range = match.group(0)!.split('-').map(int.parse).toList();
+      return (range[0] + range[1]) ~/ 2;
+    }).toList();
+  }
+
   // Fetch menu items
   Future<void> _fetchMenuItems() async {
     // Set loading to true
     setState(() {
       loading = true;
     });
-
     // Get the selected day
     DateTime selectedDay = _selectedDay!;
 
@@ -243,6 +305,8 @@ class _MenuPageState extends State<MenuPage> {
     dinnerDesserts = await menuController.fetchItemsByDateAndMeal(
         selectedDay, 'Dessert', 'Dinner');
 
+    await _calculateDailyNutrition();
+
     // Set loading to false
     setState(() {
       loading = false;
@@ -256,7 +320,11 @@ class _MenuPageState extends State<MenuPage> {
     DateTime datetime,
     String content,
     String recipe,
-    bool isRecipeUpdated,
+    int calories,
+    int protein,
+    int fat,
+    int carbs,
+    bool isMenuDetailUpdate,
     bool isAllergensUpdated,
   ) async {
     // Insert menu item
@@ -266,19 +334,21 @@ class _MenuPageState extends State<MenuPage> {
       datetime,
       content,
       recipe,
-      isRecipeUpdated,
+      calories,
+      protein,
+      fat,
+      carbs,
+      isMenuDetailUpdate,
       isAllergensUpdated,
     );
-
-    // Fetch menu items
-    _fetchMenuItems();
+    await _fetchMenuItems(); // Add await here
   }
 
   // Update menu item
   Future<void> updateMenuItem(
-      int id, String newContent, bool isRecipeUpdate) async {
+      int id, String newContent, bool isMenuDetailUpdate) async {
     // Update menu item
-    await menuController.updateMenuItem(id, newContent, isRecipeUpdate);
+    await menuController.updateMenuItem(id, newContent, isMenuDetailUpdate);
 
     // Fetch menu items
     _fetchMenuItems();
@@ -475,7 +545,7 @@ class _MenuPageState extends State<MenuPage> {
 
                   // Save menu item
                   await saveMenuItem(itemType, mealType, _selectedDay!, content,
-                      "", false, false);
+                      "", 0, 0, 0, 0, false, false);
 
                   // Pop the context
                   Navigator.of(context).pop();
@@ -574,20 +644,30 @@ class _MenuPageState extends State<MenuPage> {
                           String askRecipe =
                               'whatIsRecipe'.tr(args: [item.content]);
 
+                          // Ask the AI for the nutrition values
+                          String askNutrition =
+                              'askNutrition'.tr(args: [item.content]);
+
                           // Check if the allergen is not empty
                           if (allergen.isNotEmpty) {
                             // Get the allergen string
                             String allergenString =
                                 allergen.map((e) => e.allergens).join(', ');
 
+                            // Ask the AI for the recipe without allergens
                             askRecipe = 'whatIsRecipeWithoutAllergen'.tr(
+                              args: [item.content, allergenString],
+                            );
+
+                            // Ask the AI for the nutrition values without allergens
+                            askNutrition = 'askNutritionWithoutAllergen'.tr(
                               args: [item.content, allergenString],
                             );
                           }
 
                           // Check if the recipe exists for the item in the database
                           if (item.recipe.isNotEmpty &&
-                              !item.isRecipeUpdated &&
+                              !item.isMenuDetailUpdate &&
                               !item.isAllergensUpdated) {
                             // Show the existing recipe in a dialog
                             showDialog(
@@ -635,6 +715,17 @@ class _MenuPageState extends State<MenuPage> {
                                 Content.text(askRecipe),
                               );
 
+                              // Fetch the calories, protein, fat, and carbs from the AI
+                              final nutritionResponse = await chatSession
+                                  .sendMessage(Content.text(askNutrition));
+
+                              // Check if the nutrition response is not empty
+                              if (nutritionResponse.text != null) {
+                                // Extract the average nutrition values
+                                nutritionValues = extractAverageNutritionValues(
+                                    nutritionResponse.text!.replaceAll('*', ''));
+                              }
+
                               // Check if the widget is mounted
                               if (!mounted) return;
 
@@ -645,9 +736,44 @@ class _MenuPageState extends State<MenuPage> {
                                 String newRecipe =
                                     response.text!.replaceAll('*', '');
 
+                                // If all nutrition values are 0 or empty, do not update
+                                bool isNutritionValid =
+                                    nutritionValues.any((value) => value > 0);
+
                                 // Update the database with the new recipe
-                                await menuController.updateMenuRecipe(
-                                    item.id, newRecipe, false, false);
+                                if (isNutritionValid) {
+                                  // Update the database with the new recipe
+                                  await menuController.updateMenuDetails(
+                                    item.id,
+                                    newRecipe,
+                                    false,
+                                    nutritionValues[0],
+                                    // Calories
+                                    nutritionValues[1],
+                                    // Protein
+                                    nutritionValues[2],
+                                    // Fat
+                                    nutritionValues[3],
+                                    // Carbs
+                                    false,
+                                  );
+                                } else {
+                                  // If the nutrition values are not valid, do not update
+                                  await menuController.updateMenuDetails(
+                                    item.id,
+                                    newRecipe,
+                                    false,
+                                    0,
+                                    // Calories
+                                    0,
+                                    // Protein
+                                    0,
+                                    // Fat
+                                    0,
+                                    // Carbs
+                                    false,
+                                  );
+                                }
 
                                 // Refresh the menu items (or fetch the updated menu again)
                                 await _fetchMenuItems();
@@ -693,8 +819,8 @@ class _MenuPageState extends State<MenuPage> {
                                   // Return alert dialog for no internet connection
                                   return recipeDialog(
                                     context: context,
-                                    title: 'noInternetConnection'.tr(),
-                                    content: 'connectInternet'.tr(),
+                                    title: 'noRecipeFound'.tr(),
+                                    content: 'aiCouldNotFindRecipe'.tr(),
                                   );
                                 },
                               );
@@ -741,108 +867,186 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  // Build method
+// Build method
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Make it scrollable
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TableCalendar(
-                headerVisible: false,
-                firstDay: DateTime.now().subtract(const Duration(days: 30)),
-                lastDay: DateTime.now().add(const Duration(days: 30)),
-                focusedDay: _focusedDay,
-                calendarFormat: CalendarFormat.week,
-                locale: context.locale.toString(),
-                pageJumpingEnabled: false,
-                calendarStyle: const CalendarStyle(
-                  todayDecoration: BoxDecoration(
-                    color: Color(0xff6a0dad),
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Color(0xff9370db),
-                    shape: BoxShape.circle,
-                  ),
-                  todayTextStyle: TextStyle(
-                    color: Color(0xffd8bfd8),
-                  ),
-                  selectedTextStyle: TextStyle(
-                    color: Color(0xffe6e6fa),
-                  ),
-                ),
-                selectedDayPredicate: (day) {
-                  // Return is same day
-                  return isSameDay(_selectedDay, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  // Set state
-                  setState(() {
-                    // Set selected day
-                    _selectedDay = DateTime(
-                        selectedDay.year, selectedDay.month, selectedDay.day);
-
-                    // Set focused day
-                    _focusedDay = DateTime(
-                        focusedDay.year, focusedDay.month, focusedDay.day);
-                  });
-
-                  // Fetch menu items
-                  _fetchMenuItems();
-                },
-                onPageChanged: (focusedDay) {
-                  // Set focused day
-                  _focusedDay = focusedDay;
-                },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          bottom: const TabBar(
+            tabs: [
+              Tab(
+                icon: Icon(Icons.food_bank_outlined),
               ),
-            ),
-            // Show loading spinner while fetching data
-            if (loading)
-              const Center(child: CircularProgressIndicator())
-            else
-              Column(
+              Tab(
+                icon: Icon(Icons.dashboard_outlined),
+              ),
+            ],
+          ),
+          toolbarHeight: 0, // Reduce the height of the AppBar
+        ),
+        // Make it scrollable
+        body: TabBarView(
+          children: [
+            SingleChildScrollView(
+              child: Column(
                 children: [
-                  // Breakfast items
-                  _buildMealSection(
-                      'breakfast'.tr(), breakfastItems, 'Breakfast'),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TableCalendar(
+                      headerVisible: false,
+                      firstDay:
+                          DateTime.now().subtract(const Duration(days: 30)),
+                      lastDay: DateTime.now().add(const Duration(days: 30)),
+                      focusedDay: _focusedDay,
+                      calendarFormat: CalendarFormat.week,
+                      locale: context.locale.toString(),
+                      pageJumpingEnabled: false,
+                      calendarStyle: const CalendarStyle(
+                        todayDecoration: BoxDecoration(
+                          color: Color(0xff6a0dad),
+                          shape: BoxShape.circle,
+                        ),
+                        weekendTextStyle: TextStyle(
+                          color: Color(0xff9370db),
+                        ),
+                        selectedDecoration: BoxDecoration(
+                          color: Color(0xff9370db),
+                          shape: BoxShape.circle,
+                        ),
+                        todayTextStyle: TextStyle(
+                          color: Color(0xffd8bfd8),
+                        ),
+                        selectedTextStyle: TextStyle(
+                          color: Color(0xffe6e6fa),
+                        ),
+                      ),
+                      selectedDayPredicate: (day) {
+                        // Return is same day
+                        return isSameDay(_selectedDay, day);
+                      },
+                      onDaySelected: (selectedDay, focusedDay) {
+                        // Set state
+                        setState(() {
+                          // Set selected day
+                          _selectedDay = DateTime(selectedDay.year,
+                              selectedDay.month, selectedDay.day);
 
-                  // Breakfast desserts
-                  _buildMealSection(
-                      'breakfastSnacks'.tr(), breakfastDesserts, 'Breakfast',
-                      isDessert: true),
+                          // Set focused day
+                          _focusedDay = DateTime(focusedDay.year,
+                              focusedDay.month, focusedDay.day);
+                        });
 
-                  // Lunch items
-                  _buildMealSection('lunch'.tr(), lunchItems, 'Lunch'),
+                        // Fetch menu items
+                        _fetchMenuItems();
+                      },
+                      onPageChanged: (focusedDay) {
+                        // Set focused day
+                        _focusedDay = focusedDay;
+                      },
+                    ),
+                  ),
+                  // Show loading spinner while fetching data
+                  if (loading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Column(
+                      children: [
+                        // Breakfast items
+                        _buildMealSection(
+                            'breakfast'.tr(), breakfastItems, 'Breakfast'),
 
-                  // Lunch desserts
-                  _buildMealSection('lunchSnacks'.tr(), lunchDesserts, 'Lunch',
-                      isDessert: true),
+                        // Breakfast desserts
+                        _buildMealSection('breakfastSnacks'.tr(),
+                            breakfastDesserts, 'Breakfast',
+                            isDessert: true),
 
-                  // Dinner items
-                  _buildMealSection('dinner'.tr(), dinnerItems, 'Dinner'),
+                        // Lunch items
+                        _buildMealSection('lunch'.tr(), lunchItems, 'Lunch'),
 
-                  // Dinner desserts
-                  _buildMealSection(
-                      'dinnerSnacks'.tr(), dinnerDesserts, 'Dinner',
-                      isDessert: true),
+                        // Lunch desserts
+                        _buildMealSection(
+                            'lunchSnacks'.tr(), lunchDesserts, 'Lunch',
+                            isDessert: true),
+
+                        // Dinner items
+                        _buildMealSection('dinner'.tr(), dinnerItems, 'Dinner'),
+
+                        // Dinner desserts
+                        _buildMealSection(
+                            'dinnerSnacks'.tr(), dinnerDesserts, 'Dinner',
+                            isDessert: true),
+                      ],
+                    ),
                 ],
               ),
+            ),
+
+            // Greeting Tab
+            // Greeting Tab yerine:
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: FutureBuilder(
+                  future: _calculateDailyNutrition(),
+                  builder: (context, snapshot) {
+                    if (_nutritionData.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'noNutritionData'.tr(),
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        Text(
+                          'dailyNutrition'.tr(),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Expanded(child: buildNutritionChart(_nutritionData)),
+                        const SizedBox(height: 80),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
           ],
         ),
-      ),
 
-      // Display the banner ad at the bottom
-      bottomNavigationBar: _isLoaded
-          ? SizedBox(
-              height: _bannerAd!.size.height.toDouble(),
-              width: _bannerAd!.size.width.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
-            )
-          : const SizedBox(),
+        // Add floating action button for asking AI for what can i make with existing items
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            showBottomSheet(
+                context: context,
+                showDragHandle: true,
+                enableDrag: true,
+                clipBehavior: Clip.antiAlias,
+                builder: (BuildContext build) {
+                  return const AiPage();
+                });
+          },
+          child: const Icon(
+            Icons.emoji_food_beverage,
+          ),
+        ),
+
+        // Display the banner ad at the bottom
+        bottomNavigationBar: _isLoaded
+            ? SizedBox(
+                height: _bannerAd!.size.height.toDouble(),
+                width: _bannerAd!.size.width.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              )
+            : const SizedBox(),
+      ),
     );
   }
 }

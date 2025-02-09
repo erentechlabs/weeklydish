@@ -137,12 +137,14 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingsSection(
             "moreSettings".tr(),
             [
-              _settingsButton(
-                  "manageSubscription".tr(), Icons.person_2_outlined, () {}),
-              _settingsButton(
-                  "giveFeedback".tr(), Icons.feedback_outlined, () {}),
+              // _settingsButton(
+              //    "manageSubscription".tr(), Icons.person_2_outlined, () {}),
+              //_settingsButton(
+              //   "giveFeedback".tr(), Icons.feedback_outlined, () {}),
               _settingsButton("rateUs".tr(), Icons.reviews_outlined, () {
-                LaunchReview.launch(androidAppId: "", iOSAppId: "");
+                LaunchReview.launch(
+                    androidAppId: "com.Appsmiths.WeeklyDish",
+                    iOSAppId: "585027354");
               }),
             ],
           ),

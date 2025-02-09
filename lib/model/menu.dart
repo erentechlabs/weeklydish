@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import '../extension/food_list_converter.dart';
 
 // Define the menu model
 class Menu extends Table {
@@ -21,9 +20,21 @@ class Menu extends Table {
   // Recipe list (in the same order as the foods/desserts).
   TextColumn get recipe => text().named("Recipe")();
 
+  // Calories list (in the same order as the foods/desserts).
+  IntColumn get calories => integer().named("Calories")();
+
+  // Protein list (in the same order as the foods/desserts).
+  IntColumn get protein => integer().named("Protein")();
+
+  // Carbohydrate list (in the same order as the foods/desserts).
+  IntColumn get carbohydrate => integer().named("Carbohydrate")();
+
+  // Fat list (in the same order as the foods/desserts).
+  IntColumn get fat => integer().named("Fat")();
+
   // Determine whether the recipe is updated.
-  BoolColumn get isRecipeUpdated =>
-      boolean().named("Recipe_Updated").withDefault(const Constant(false))();
+  BoolColumn get isMenuDetailUpdate =>
+      boolean().named("Menu_Detail_Updated").withDefault(const Constant(false))();
 
   // Determine whether the allergens are updated.
   BoolColumn get isAllergensUpdated =>

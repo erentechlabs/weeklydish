@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:weeklydish/controller/food_and_dessert_contoller.dart';
 import '../../database/app_database.dart';
 import '../custom_ui/show_delete_dialog.dart';
+import '../custom_ui/success_snackbar_dialog.dart';
 
 // Menu Types
 enum InsersType {
@@ -30,6 +31,7 @@ class _MenuAddPageState extends State<MenuAddPage> {
   // Menu Item Controller
   final TextEditingController menuItemController = TextEditingController();
 
+
   // Add the items
   final List<String> localMenuItems = [];
 
@@ -42,6 +44,19 @@ class _MenuAddPageState extends State<MenuAddPage> {
     super.initState();
     // Initialize the FoodAndDessertController with the database instance
     menuItemDatabaseController = FoodAndDessertController(AppDatabase());
+
+    // Add a listener to the menu item controller
+    menuItemController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    // Dispose the menu item controller
+    menuItemController.dispose();
+    // Call the super class dispose method
+    super.dispose();
   }
 
   // Function to fetch menu items from the database
@@ -291,7 +306,13 @@ class _MenuAddPageState extends State<MenuAddPage> {
 
               // Add the item
               IconButton(
-                icon: const Icon(Icons.add_outlined, size: 40),
+                icon: Icon(
+                  localMenuItems.isNotEmpty && menuItemController.text.isEmpty
+                      ? Icons.check_outlined // Show save icon
+                      : Icons.add_outlined, // Otherwise, show add icon
+                  size: 40,
+                ),
+
                 onPressed: () {
                   setState(() {
                     if (menuItemController.text.isNotEmpty) {
@@ -343,6 +364,9 @@ class _MenuAddPageState extends State<MenuAddPage> {
 
                       // Clear the list
                       localMenuItems.clear();
+
+                      // Show a success message
+                      showSuccessSnackbarDialog(context, "itemSaved".tr());
                     }
                   });
                 },

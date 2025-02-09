@@ -34,7 +34,7 @@
         <!-- Google AdMob -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="add your admob app id here"/>
+            android:value="API_KEY"/>
 
     </application>
     <!-- Required to query activities that can process text, see:

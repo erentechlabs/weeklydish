@@ -55,12 +55,18 @@ class _NavPageState extends State<NavPage> {
         currentIndex: currentIndex,
         onTap: (index) => setState(() => currentIndex = index),
         items: [
+
+          // Menu
           BottomNavigationBarItem(
               icon: const Icon(Icons.menu_book_rounded), label: "menu".tr()),
+
+          // Menu Planner
           BottomNavigationBarItem(
             icon: const Icon(Icons.list_outlined),
             label: "list".tr(),
           ),
+
+          // Shopping List
           BottomNavigationBarItem(
               icon: const Icon(Icons.shopping_cart_outlined),
               label: "shoppingList".tr()),

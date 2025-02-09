@@ -103,6 +103,10 @@ class MenuPlannerPage extends StatelessWidget {
                       currentDate.year, currentDate.month, currentDate.day),
                   content,
                   "",
+                  0,
+                  0,
+                  0,
+                  0,
                   false,
                   false,
                 );
@@ -267,7 +271,7 @@ class MenuPlannerPage extends StatelessWidget {
                       // Show a celebratory message
                       Expanded(
                         child: Text(
-                          "succes".tr(args: ['🎉', '🎯']),
+                          "success".tr(args: ['🎉', '🎯']),
                           // Set the snack bar text style
                           style: const TextStyle(
                               fontSize: 14,

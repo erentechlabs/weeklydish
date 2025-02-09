@@ -804,15 +804,38 @@ class $MenuTable extends Menu with TableInfo<$MenuTable, MenuData> {
   late final GeneratedColumn<String> recipe = GeneratedColumn<String>(
       'Recipe', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _isRecipeUpdatedMeta =
-      const VerificationMeta('isRecipeUpdated');
+  static const VerificationMeta _caloriesMeta =
+      const VerificationMeta('calories');
   @override
-  late final GeneratedColumn<bool> isRecipeUpdated = GeneratedColumn<bool>(
-      'Recipe_Updated', aliasedName, false,
+  late final GeneratedColumn<int> calories = GeneratedColumn<int>(
+      'Calories', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _proteinMeta =
+      const VerificationMeta('protein');
+  @override
+  late final GeneratedColumn<int> protein = GeneratedColumn<int>(
+      'Protein', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _carbohydrateMeta =
+      const VerificationMeta('carbohydrate');
+  @override
+  late final GeneratedColumn<int> carbohydrate = GeneratedColumn<int>(
+      'Carbohydrate', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _fatMeta = const VerificationMeta('fat');
+  @override
+  late final GeneratedColumn<int> fat = GeneratedColumn<int>(
+      'Fat', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _isMenuDetailUpdateMeta =
+      const VerificationMeta('isMenuDetailUpdate');
+  @override
+  late final GeneratedColumn<bool> isMenuDetailUpdate = GeneratedColumn<bool>(
+      'Menu_Detail_Updated', aliasedName, false,
       type: DriftSqlType.bool,
       requiredDuringInsert: false,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("Recipe_Updated" IN (0, 1))'),
+          'CHECK ("Menu_Detail_Updated" IN (0, 1))'),
       defaultValue: const Constant(false));
   static const VerificationMeta _isAllergensUpdatedMeta =
       const VerificationMeta('isAllergensUpdated');
@@ -832,7 +855,11 @@ class $MenuTable extends Menu with TableInfo<$MenuTable, MenuData> {
         datetime,
         content,
         recipe,
-        isRecipeUpdated,
+        calories,
+        protein,
+        carbohydrate,
+        fat,
+        isMenuDetailUpdate,
         isAllergensUpdated
       ];
   @override
@@ -878,11 +905,37 @@ class $MenuTable extends Menu with TableInfo<$MenuTable, MenuData> {
     } else if (isInserting) {
       context.missing(_recipeMeta);
     }
-    if (data.containsKey('Recipe_Updated')) {
+    if (data.containsKey('Calories')) {
+      context.handle(_caloriesMeta,
+          calories.isAcceptableOrUnknown(data['Calories']!, _caloriesMeta));
+    } else if (isInserting) {
+      context.missing(_caloriesMeta);
+    }
+    if (data.containsKey('Protein')) {
+      context.handle(_proteinMeta,
+          protein.isAcceptableOrUnknown(data['Protein']!, _proteinMeta));
+    } else if (isInserting) {
+      context.missing(_proteinMeta);
+    }
+    if (data.containsKey('Carbohydrate')) {
       context.handle(
-          _isRecipeUpdatedMeta,
-          isRecipeUpdated.isAcceptableOrUnknown(
-              data['Recipe_Updated']!, _isRecipeUpdatedMeta));
+          _carbohydrateMeta,
+          carbohydrate.isAcceptableOrUnknown(
+              data['Carbohydrate']!, _carbohydrateMeta));
+    } else if (isInserting) {
+      context.missing(_carbohydrateMeta);
+    }
+    if (data.containsKey('Fat')) {
+      context.handle(
+          _fatMeta, fat.isAcceptableOrUnknown(data['Fat']!, _fatMeta));
+    } else if (isInserting) {
+      context.missing(_fatMeta);
+    }
+    if (data.containsKey('Menu_Detail_Updated')) {
+      context.handle(
+          _isMenuDetailUpdateMeta,
+          isMenuDetailUpdate.isAcceptableOrUnknown(
+              data['Menu_Detail_Updated']!, _isMenuDetailUpdateMeta));
     }
     if (data.containsKey('Allergens_Updated')) {
       context.handle(
@@ -911,8 +964,16 @@ class $MenuTable extends Menu with TableInfo<$MenuTable, MenuData> {
           .read(DriftSqlType.string, data['${effectivePrefix}Content'])!,
       recipe: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}Recipe'])!,
-      isRecipeUpdated: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}Recipe_Updated'])!,
+      calories: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}Calories'])!,
+      protein: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}Protein'])!,
+      carbohydrate: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}Carbohydrate'])!,
+      fat: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}Fat'])!,
+      isMenuDetailUpdate: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}Menu_Detail_Updated'])!,
       isAllergensUpdated: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}Allergens_Updated'])!,
     );
@@ -931,7 +992,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
   final DateTime datetime;
   final String content;
   final String recipe;
-  final bool isRecipeUpdated;
+  final int calories;
+  final int protein;
+  final int carbohydrate;
+  final int fat;
+  final bool isMenuDetailUpdate;
   final bool isAllergensUpdated;
   const MenuData(
       {required this.id,
@@ -940,7 +1005,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
       required this.datetime,
       required this.content,
       required this.recipe,
-      required this.isRecipeUpdated,
+      required this.calories,
+      required this.protein,
+      required this.carbohydrate,
+      required this.fat,
+      required this.isMenuDetailUpdate,
       required this.isAllergensUpdated});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -951,7 +1020,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
     map['Datetime'] = Variable<DateTime>(datetime);
     map['Content'] = Variable<String>(content);
     map['Recipe'] = Variable<String>(recipe);
-    map['Recipe_Updated'] = Variable<bool>(isRecipeUpdated);
+    map['Calories'] = Variable<int>(calories);
+    map['Protein'] = Variable<int>(protein);
+    map['Carbohydrate'] = Variable<int>(carbohydrate);
+    map['Fat'] = Variable<int>(fat);
+    map['Menu_Detail_Updated'] = Variable<bool>(isMenuDetailUpdate);
     map['Allergens_Updated'] = Variable<bool>(isAllergensUpdated);
     return map;
   }
@@ -964,7 +1037,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
       datetime: Value(datetime),
       content: Value(content),
       recipe: Value(recipe),
-      isRecipeUpdated: Value(isRecipeUpdated),
+      calories: Value(calories),
+      protein: Value(protein),
+      carbohydrate: Value(carbohydrate),
+      fat: Value(fat),
+      isMenuDetailUpdate: Value(isMenuDetailUpdate),
       isAllergensUpdated: Value(isAllergensUpdated),
     );
   }
@@ -979,7 +1056,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
       datetime: serializer.fromJson<DateTime>(json['datetime']),
       content: serializer.fromJson<String>(json['content']),
       recipe: serializer.fromJson<String>(json['recipe']),
-      isRecipeUpdated: serializer.fromJson<bool>(json['isRecipeUpdated']),
+      calories: serializer.fromJson<int>(json['calories']),
+      protein: serializer.fromJson<int>(json['protein']),
+      carbohydrate: serializer.fromJson<int>(json['carbohydrate']),
+      fat: serializer.fromJson<int>(json['fat']),
+      isMenuDetailUpdate: serializer.fromJson<bool>(json['isMenuDetailUpdate']),
       isAllergensUpdated: serializer.fromJson<bool>(json['isAllergensUpdated']),
     );
   }
@@ -993,7 +1074,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
       'datetime': serializer.toJson<DateTime>(datetime),
       'content': serializer.toJson<String>(content),
       'recipe': serializer.toJson<String>(recipe),
-      'isRecipeUpdated': serializer.toJson<bool>(isRecipeUpdated),
+      'calories': serializer.toJson<int>(calories),
+      'protein': serializer.toJson<int>(protein),
+      'carbohydrate': serializer.toJson<int>(carbohydrate),
+      'fat': serializer.toJson<int>(fat),
+      'isMenuDetailUpdate': serializer.toJson<bool>(isMenuDetailUpdate),
       'isAllergensUpdated': serializer.toJson<bool>(isAllergensUpdated),
     };
   }
@@ -1005,7 +1090,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
           DateTime? datetime,
           String? content,
           String? recipe,
-          bool? isRecipeUpdated,
+          int? calories,
+          int? protein,
+          int? carbohydrate,
+          int? fat,
+          bool? isMenuDetailUpdate,
           bool? isAllergensUpdated}) =>
       MenuData(
         id: id ?? this.id,
@@ -1014,7 +1103,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
         datetime: datetime ?? this.datetime,
         content: content ?? this.content,
         recipe: recipe ?? this.recipe,
-        isRecipeUpdated: isRecipeUpdated ?? this.isRecipeUpdated,
+        calories: calories ?? this.calories,
+        protein: protein ?? this.protein,
+        carbohydrate: carbohydrate ?? this.carbohydrate,
+        fat: fat ?? this.fat,
+        isMenuDetailUpdate: isMenuDetailUpdate ?? this.isMenuDetailUpdate,
         isAllergensUpdated: isAllergensUpdated ?? this.isAllergensUpdated,
       );
   MenuData copyWithCompanion(MenuCompanion data) {
@@ -1025,9 +1118,15 @@ class MenuData extends DataClass implements Insertable<MenuData> {
       datetime: data.datetime.present ? data.datetime.value : this.datetime,
       content: data.content.present ? data.content.value : this.content,
       recipe: data.recipe.present ? data.recipe.value : this.recipe,
-      isRecipeUpdated: data.isRecipeUpdated.present
-          ? data.isRecipeUpdated.value
-          : this.isRecipeUpdated,
+      calories: data.calories.present ? data.calories.value : this.calories,
+      protein: data.protein.present ? data.protein.value : this.protein,
+      carbohydrate: data.carbohydrate.present
+          ? data.carbohydrate.value
+          : this.carbohydrate,
+      fat: data.fat.present ? data.fat.value : this.fat,
+      isMenuDetailUpdate: data.isMenuDetailUpdate.present
+          ? data.isMenuDetailUpdate.value
+          : this.isMenuDetailUpdate,
       isAllergensUpdated: data.isAllergensUpdated.present
           ? data.isAllergensUpdated.value
           : this.isAllergensUpdated,
@@ -1043,15 +1142,30 @@ class MenuData extends DataClass implements Insertable<MenuData> {
           ..write('datetime: $datetime, ')
           ..write('content: $content, ')
           ..write('recipe: $recipe, ')
-          ..write('isRecipeUpdated: $isRecipeUpdated, ')
+          ..write('calories: $calories, ')
+          ..write('protein: $protein, ')
+          ..write('carbohydrate: $carbohydrate, ')
+          ..write('fat: $fat, ')
+          ..write('isMenuDetailUpdate: $isMenuDetailUpdate, ')
           ..write('isAllergensUpdated: $isAllergensUpdated')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, itemType, mealType, datetime, content,
-      recipe, isRecipeUpdated, isAllergensUpdated);
+  int get hashCode => Object.hash(
+      id,
+      itemType,
+      mealType,
+      datetime,
+      content,
+      recipe,
+      calories,
+      protein,
+      carbohydrate,
+      fat,
+      isMenuDetailUpdate,
+      isAllergensUpdated);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1062,7 +1176,11 @@ class MenuData extends DataClass implements Insertable<MenuData> {
           other.datetime == this.datetime &&
           other.content == this.content &&
           other.recipe == this.recipe &&
-          other.isRecipeUpdated == this.isRecipeUpdated &&
+          other.calories == this.calories &&
+          other.protein == this.protein &&
+          other.carbohydrate == this.carbohydrate &&
+          other.fat == this.fat &&
+          other.isMenuDetailUpdate == this.isMenuDetailUpdate &&
           other.isAllergensUpdated == this.isAllergensUpdated);
 }
 
@@ -1073,7 +1191,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
   final Value<DateTime> datetime;
   final Value<String> content;
   final Value<String> recipe;
-  final Value<bool> isRecipeUpdated;
+  final Value<int> calories;
+  final Value<int> protein;
+  final Value<int> carbohydrate;
+  final Value<int> fat;
+  final Value<bool> isMenuDetailUpdate;
   final Value<bool> isAllergensUpdated;
   const MenuCompanion({
     this.id = const Value.absent(),
@@ -1082,7 +1204,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
     this.datetime = const Value.absent(),
     this.content = const Value.absent(),
     this.recipe = const Value.absent(),
-    this.isRecipeUpdated = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.protein = const Value.absent(),
+    this.carbohydrate = const Value.absent(),
+    this.fat = const Value.absent(),
+    this.isMenuDetailUpdate = const Value.absent(),
     this.isAllergensUpdated = const Value.absent(),
   });
   MenuCompanion.insert({
@@ -1092,13 +1218,21 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
     required DateTime datetime,
     required String content,
     required String recipe,
-    this.isRecipeUpdated = const Value.absent(),
+    required int calories,
+    required int protein,
+    required int carbohydrate,
+    required int fat,
+    this.isMenuDetailUpdate = const Value.absent(),
     this.isAllergensUpdated = const Value.absent(),
   })  : itemType = Value(itemType),
         mealType = Value(mealType),
         datetime = Value(datetime),
         content = Value(content),
-        recipe = Value(recipe);
+        recipe = Value(recipe),
+        calories = Value(calories),
+        protein = Value(protein),
+        carbohydrate = Value(carbohydrate),
+        fat = Value(fat);
   static Insertable<MenuData> custom({
     Expression<int>? id,
     Expression<String>? itemType,
@@ -1106,7 +1240,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
     Expression<DateTime>? datetime,
     Expression<String>? content,
     Expression<String>? recipe,
-    Expression<bool>? isRecipeUpdated,
+    Expression<int>? calories,
+    Expression<int>? protein,
+    Expression<int>? carbohydrate,
+    Expression<int>? fat,
+    Expression<bool>? isMenuDetailUpdate,
     Expression<bool>? isAllergensUpdated,
   }) {
     return RawValuesInsertable({
@@ -1116,7 +1254,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
       if (datetime != null) 'Datetime': datetime,
       if (content != null) 'Content': content,
       if (recipe != null) 'Recipe': recipe,
-      if (isRecipeUpdated != null) 'Recipe_Updated': isRecipeUpdated,
+      if (calories != null) 'Calories': calories,
+      if (protein != null) 'Protein': protein,
+      if (carbohydrate != null) 'Carbohydrate': carbohydrate,
+      if (fat != null) 'Fat': fat,
+      if (isMenuDetailUpdate != null) 'Menu_Detail_Updated': isMenuDetailUpdate,
       if (isAllergensUpdated != null) 'Allergens_Updated': isAllergensUpdated,
     });
   }
@@ -1128,7 +1270,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
       Value<DateTime>? datetime,
       Value<String>? content,
       Value<String>? recipe,
-      Value<bool>? isRecipeUpdated,
+      Value<int>? calories,
+      Value<int>? protein,
+      Value<int>? carbohydrate,
+      Value<int>? fat,
+      Value<bool>? isMenuDetailUpdate,
       Value<bool>? isAllergensUpdated}) {
     return MenuCompanion(
       id: id ?? this.id,
@@ -1137,7 +1283,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
       datetime: datetime ?? this.datetime,
       content: content ?? this.content,
       recipe: recipe ?? this.recipe,
-      isRecipeUpdated: isRecipeUpdated ?? this.isRecipeUpdated,
+      calories: calories ?? this.calories,
+      protein: protein ?? this.protein,
+      carbohydrate: carbohydrate ?? this.carbohydrate,
+      fat: fat ?? this.fat,
+      isMenuDetailUpdate: isMenuDetailUpdate ?? this.isMenuDetailUpdate,
       isAllergensUpdated: isAllergensUpdated ?? this.isAllergensUpdated,
     );
   }
@@ -1163,8 +1313,20 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
     if (recipe.present) {
       map['Recipe'] = Variable<String>(recipe.value);
     }
-    if (isRecipeUpdated.present) {
-      map['Recipe_Updated'] = Variable<bool>(isRecipeUpdated.value);
+    if (calories.present) {
+      map['Calories'] = Variable<int>(calories.value);
+    }
+    if (protein.present) {
+      map['Protein'] = Variable<int>(protein.value);
+    }
+    if (carbohydrate.present) {
+      map['Carbohydrate'] = Variable<int>(carbohydrate.value);
+    }
+    if (fat.present) {
+      map['Fat'] = Variable<int>(fat.value);
+    }
+    if (isMenuDetailUpdate.present) {
+      map['Menu_Detail_Updated'] = Variable<bool>(isMenuDetailUpdate.value);
     }
     if (isAllergensUpdated.present) {
       map['Allergens_Updated'] = Variable<bool>(isAllergensUpdated.value);
@@ -1181,7 +1343,11 @@ class MenuCompanion extends UpdateCompanion<MenuData> {
           ..write('datetime: $datetime, ')
           ..write('content: $content, ')
           ..write('recipe: $recipe, ')
-          ..write('isRecipeUpdated: $isRecipeUpdated, ')
+          ..write('calories: $calories, ')
+          ..write('protein: $protein, ')
+          ..write('carbohydrate: $carbohydrate, ')
+          ..write('fat: $fat, ')
+          ..write('isMenuDetailUpdate: $isMenuDetailUpdate, ')
           ..write('isAllergensUpdated: $isAllergensUpdated')
           ..write(')'))
         .toString();
@@ -1640,7 +1806,11 @@ typedef $$MenuTableCreateCompanionBuilder = MenuCompanion Function({
   required DateTime datetime,
   required String content,
   required String recipe,
-  Value<bool> isRecipeUpdated,
+  required int calories,
+  required int protein,
+  required int carbohydrate,
+  required int fat,
+  Value<bool> isMenuDetailUpdate,
   Value<bool> isAllergensUpdated,
 });
 typedef $$MenuTableUpdateCompanionBuilder = MenuCompanion Function({
@@ -1650,7 +1820,11 @@ typedef $$MenuTableUpdateCompanionBuilder = MenuCompanion Function({
   Value<DateTime> datetime,
   Value<String> content,
   Value<String> recipe,
-  Value<bool> isRecipeUpdated,
+  Value<int> calories,
+  Value<int> protein,
+  Value<int> carbohydrate,
+  Value<int> fat,
+  Value<bool> isMenuDetailUpdate,
   Value<bool> isAllergensUpdated,
 });
 
@@ -1680,8 +1854,20 @@ class $$MenuTableFilterComposer extends Composer<_$AppDatabase, $MenuTable> {
   ColumnFilters<String> get recipe => $composableBuilder(
       column: $table.recipe, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<bool> get isRecipeUpdated => $composableBuilder(
-      column: $table.isRecipeUpdated,
+  ColumnFilters<int> get calories => $composableBuilder(
+      column: $table.calories, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get protein => $composableBuilder(
+      column: $table.protein, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get carbohydrate => $composableBuilder(
+      column: $table.carbohydrate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get fat => $composableBuilder(
+      column: $table.fat, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isMenuDetailUpdate => $composableBuilder(
+      column: $table.isMenuDetailUpdate,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isAllergensUpdated => $composableBuilder(
@@ -1715,8 +1901,21 @@ class $$MenuTableOrderingComposer extends Composer<_$AppDatabase, $MenuTable> {
   ColumnOrderings<String> get recipe => $composableBuilder(
       column: $table.recipe, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<bool> get isRecipeUpdated => $composableBuilder(
-      column: $table.isRecipeUpdated,
+  ColumnOrderings<int> get calories => $composableBuilder(
+      column: $table.calories, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get protein => $composableBuilder(
+      column: $table.protein, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get carbohydrate => $composableBuilder(
+      column: $table.carbohydrate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get fat => $composableBuilder(
+      column: $table.fat, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isMenuDetailUpdate => $composableBuilder(
+      column: $table.isMenuDetailUpdate,
       builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get isAllergensUpdated => $composableBuilder(
@@ -1751,8 +1950,20 @@ class $$MenuTableAnnotationComposer
   GeneratedColumn<String> get recipe =>
       $composableBuilder(column: $table.recipe, builder: (column) => column);
 
-  GeneratedColumn<bool> get isRecipeUpdated => $composableBuilder(
-      column: $table.isRecipeUpdated, builder: (column) => column);
+  GeneratedColumn<int> get calories =>
+      $composableBuilder(column: $table.calories, builder: (column) => column);
+
+  GeneratedColumn<int> get protein =>
+      $composableBuilder(column: $table.protein, builder: (column) => column);
+
+  GeneratedColumn<int> get carbohydrate => $composableBuilder(
+      column: $table.carbohydrate, builder: (column) => column);
+
+  GeneratedColumn<int> get fat =>
+      $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<bool> get isMenuDetailUpdate => $composableBuilder(
+      column: $table.isMenuDetailUpdate, builder: (column) => column);
 
   GeneratedColumn<bool> get isAllergensUpdated => $composableBuilder(
       column: $table.isAllergensUpdated, builder: (column) => column);
@@ -1787,7 +1998,11 @@ class $$MenuTableTableManager extends RootTableManager<
             Value<DateTime> datetime = const Value.absent(),
             Value<String> content = const Value.absent(),
             Value<String> recipe = const Value.absent(),
-            Value<bool> isRecipeUpdated = const Value.absent(),
+            Value<int> calories = const Value.absent(),
+            Value<int> protein = const Value.absent(),
+            Value<int> carbohydrate = const Value.absent(),
+            Value<int> fat = const Value.absent(),
+            Value<bool> isMenuDetailUpdate = const Value.absent(),
             Value<bool> isAllergensUpdated = const Value.absent(),
           }) =>
               MenuCompanion(
@@ -1797,7 +2012,11 @@ class $$MenuTableTableManager extends RootTableManager<
             datetime: datetime,
             content: content,
             recipe: recipe,
-            isRecipeUpdated: isRecipeUpdated,
+            calories: calories,
+            protein: protein,
+            carbohydrate: carbohydrate,
+            fat: fat,
+            isMenuDetailUpdate: isMenuDetailUpdate,
             isAllergensUpdated: isAllergensUpdated,
           ),
           createCompanionCallback: ({
@@ -1807,7 +2026,11 @@ class $$MenuTableTableManager extends RootTableManager<
             required DateTime datetime,
             required String content,
             required String recipe,
-            Value<bool> isRecipeUpdated = const Value.absent(),
+            required int calories,
+            required int protein,
+            required int carbohydrate,
+            required int fat,
+            Value<bool> isMenuDetailUpdate = const Value.absent(),
             Value<bool> isAllergensUpdated = const Value.absent(),
           }) =>
               MenuCompanion.insert(
@@ -1817,7 +2040,11 @@ class $$MenuTableTableManager extends RootTableManager<
             datetime: datetime,
             content: content,
             recipe: recipe,
-            isRecipeUpdated: isRecipeUpdated,
+            calories: calories,
+            protein: protein,
+            carbohydrate: carbohydrate,
+            fat: fat,
+            isMenuDetailUpdate: isMenuDetailUpdate,
             isAllergensUpdated: isAllergensUpdated,
           ),
           withReferenceMapper: (p0) => p0

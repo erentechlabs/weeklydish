@@ -35,7 +35,7 @@ showWarningSnackbarDialog(BuildContext context, String message) {
       ),
 
       // Duration of the message
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 2),
     ),
   );
 }
