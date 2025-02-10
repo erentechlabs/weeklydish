@@ -983,39 +983,36 @@ class _MenuPageState extends State<MenuPage> {
               ),
             ),
 
-            // Greeting Tab
-            // Greeting Tab yerine:
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: FutureBuilder(
-                  future: _calculateDailyNutrition(),
-                  builder: (context, snapshot) {
-                    if (_nutritionData.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'noNutritionData'.tr(),
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      children: [
-                        Text(
-                          'dailyNutrition'.tr(),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Expanded(child: buildNutritionChart(_nutritionData)),
-                        const SizedBox(height: 80),
-                      ],
+	    // Nutrition Tab
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FutureBuilder(
+                future: _calculateDailyNutrition(),
+                builder: (context, snapshot) {
+                  if (_nutritionData.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'noNutritionData'.tr(),
+                        style: const TextStyle(fontSize: 18),
+                      ),
                     );
-                  },
-                ),
+                  }
+
+                  return Column(
+                    children: [
+                      Text(
+                        'dailyNutrition'.tr(),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(child: buildNutritionChart(_nutritionData)),
+                      const SizedBox(height: 80),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -1041,12 +1038,13 @@ class _MenuPageState extends State<MenuPage> {
         // Display the banner ad at the bottom
         bottomNavigationBar: _isLoaded
             ? SizedBox(
-                height: _bannerAd!.size.height.toDouble(),
-                width: _bannerAd!.size.width.toDouble(),
-                child: AdWidget(ad: _bannerAd!),
-              )
+          height: _bannerAd!.size.height.toDouble(),
+          width: _bannerAd!.size.width.toDouble(),
+          child: AdWidget(ad: _bannerAd!),
+        )
             : const SizedBox(),
       ),
     );
   }
 }
+
