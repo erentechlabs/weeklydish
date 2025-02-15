@@ -20,7 +20,6 @@ Tired of the daily struggle of “what should I cook today?” Weekly Dish is he
 <p align="center" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
   <img src="https://github.com/user-attachments/assets/bb247aef-f60b-4048-a562-06910bcb0d67" width="180" style="vertical-align: middle;" />
   <img src="https://github.com/user-attachments/assets/cc20357b-09e3-4b52-a041-e5e9b1560056" width="180" style="vertical-align: middle;" />
-  <img src="https://github.com/user-attachments/assets/7e46a07b-935e-4b48-9b05-eabbacd4d059" width="180" style="vertical-align: middle;" />
   <img src="https://github.com/user-attachments/assets/f30c3014-d499-4a30-9c5d-19c75a531156" width="180" style="vertical-align: middle;" />
   <img src="https://github.com/user-attachments/assets/36940ab2-b900-4b03-a05a-f79bee95fd2e" width="180" style="vertical-align: middle;" />
   <img src="https://github.com/user-attachments/assets/46657f58-48e1-4526-a159-47d13102fe2c" width="180" style="vertical-align: middle;" />
