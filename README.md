@@ -19,6 +19,9 @@ Tired of the daily struggle of “what should I cook today?” Weekly Dish is he
 ## Screenshots
 <p align="center" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
   <img src="https://github.com/user-attachments/assets/bb247aef-f60b-4048-a562-06910bcb0d67" width="180" style="vertical-align: middle;" />
+  <img src="https://github.com/user-attachments/assets/054ec262-844a-4634-9919-926c04353759" width="180" style="vertical-align: middle;" />
+
+
   
   <img src="https://github.com/user-attachments/assets/c4e81e2e-58dd-4812-ad68-c9c088466c60" width="180" style="vertical-align: middle;" />
   <img src="https://github.com/user-attachments/assets/f86baccd-f963-4c9f-9e36-230064944539" width="180" style="vertical-align: middle;" />
