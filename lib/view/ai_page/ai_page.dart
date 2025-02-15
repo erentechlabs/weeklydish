@@ -1,10 +1,8 @@
 import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-
 import '../../extension/generative_model.dart';
 
 class AiPage extends StatefulWidget {
@@ -19,10 +17,7 @@ class _AiPageState extends State<AiPage> {
   final TextEditingController controller = TextEditingController();
 
   // AI model
-  late final GenerativeModel model;
-
-  // Chat session with the AI model
-  late final ChatSession chatSession;
+  final client = generativeModel();
 
   // Loading indicator
   bool isLoading = false;
@@ -33,6 +28,12 @@ class _AiPageState extends State<AiPage> {
   // Interstitial Ad Variable
   InterstitialAd? _interstitialAd;
 
+  // AI model
+  late final GenerativeModel model;
+
+  // Chat session with the AI model
+  late final ChatSession chatSession;
+
   // Counter for interstitial ad
   int counter = 0;
 
@@ -41,17 +42,17 @@ class _AiPageState extends State<AiPage> {
   void initState() {
     super.initState();
 
-    // Call the createInterstitialAd method
-    createInterstitialAd();
-
     // Initialize the AI model
     model = generativeModel();
 
-    // Dispose the interstitial ad
-    _interstitialAd?.dispose();
-
     // Start a chat session with the AI model
     chatSession = model.startChat();
+
+    // Call the createInterstitialAd method
+    createInterstitialAd();
+
+    // Dispose the interstitial ad
+    _interstitialAd?.dispose();
   }
 
   @override
@@ -67,7 +68,8 @@ class _AiPageState extends State<AiPage> {
     // Initialize the interstitial ad
     InterstitialAd.load(
       // Set the ad unit id
-      adUnitId:  "API_KEY",
+      adUnitId: "API_KEY",
+
       // Set the ad
       request: const AdRequest(),
 
@@ -94,10 +96,6 @@ class _AiPageState extends State<AiPage> {
     if (_interstitialAd != null) {
       // Show the ad if it is loaded
       _interstitialAd?.show();
-      print('Showing Interstitial Ad');
-    } else {
-      // If ad is not loaded, print message
-      print('InterstitialAd is not ready yet.');
     }
   }
 
@@ -107,7 +105,7 @@ class _AiPageState extends State<AiPage> {
     counter++;
 
     // If the counter is 3, show the interstitial ad and reset the counter
-    if (counter == 3) {
+    if (counter == 2) {
       showInterstitialAd();
       counter = 0;
     }
@@ -127,8 +125,9 @@ class _AiPageState extends State<AiPage> {
       // Check if the user message is not empty
       if (userMessage.isNotEmpty) {
         // Send the user message to the AI model
-        final response =
-            await chatSession.sendMessage(Content.text(userMessage));
+        final response = await chatSession.sendMessage(
+          Content.text("foodAsistant".tr(args: [userMessage])),
+        );
 
         // Update the responses from the AI model
         setState(() {
@@ -136,7 +135,7 @@ class _AiPageState extends State<AiPage> {
           isLoading = false;
 
           // Show the responses from the AI model
-          responses = response.text!.replaceAll('*', '');
+          responses = response.text!.replaceAll(RegExp(r'\*+'), '');
         });
       } else {
         // Hide the loading indicator
@@ -171,24 +170,23 @@ class _AiPageState extends State<AiPage> {
           // Loading indicator or result list
           Expanded(
             // Show the loading indicator while waiting for the AI model
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SingleChildScrollView(
-                      // Show the responses from the AI model
-                      child: cardViewer(
-                        // Show the initial text if the
-                        responses.isEmpty
-
-                            // Initial text shown at the beginning
-                            ? "discoverAI".tr()
-
-                            // Answer from the AI model
-                            : responses,
+            child:
+                isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SingleChildScrollView(
+                        // Show the responses from the AI model
+                        child: cardViewer(
+                          // Show the initial text if the
+                          responses.isEmpty
+                              // Initial text shown at the beginning
+                              ? "discoverAI".tr()
+                              // Answer from the AI model
+                              : responses,
+                        ),
                       ),
                     ),
-                  ),
           ),
 
           // Input field and submit button
@@ -207,7 +205,9 @@ class _AiPageState extends State<AiPage> {
                       hintText: 'enterYourTextHere'.tr(),
                       border: const OutlineInputBorder(),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 12.0),
+                        horizontal: 16.0,
+                        vertical: 12.0,
+                      ),
                     ),
                   ),
                 ),

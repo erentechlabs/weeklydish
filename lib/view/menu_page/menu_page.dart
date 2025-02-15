@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,8 @@ import '../../database/app_database.dart';
 import '../../extension/generative_model.dart';
 import '../../model/nutrition_data.dart';
 import '../custom_ui/ads_dialog.dart';
-import '../custom_ui/nutrition_chart.dart';
+import '../custom_ui/per_item_nutrition_chart.dart';
+import '../custom_ui/total_nutrition_chart.dart';
 import '../custom_ui/recipe_dialog.dart';
 import '../custom_ui/show_delete_dialog.dart';
 
@@ -24,7 +24,8 @@ class MenuPage extends StatefulWidget {
   State<MenuPage> createState() => _MenuPageState();
 }
 
-class _MenuPageState extends State<MenuPage> {
+class _MenuPageState extends State<MenuPage>
+    with SingleTickerProviderStateMixin {
   // Variables to hold the selected day and focused day
   // Initialize the selected day
   DateTime _focusedDay = DateTime.now();
@@ -37,6 +38,9 @@ class _MenuPageState extends State<MenuPage> {
 
   // Controller instance for allergies
   late AllergensController allergiesController;
+
+  // Tabbar controller
+  late TabController _tabController;
 
   // Variables to hold menu items
   // Breakfast items
@@ -63,6 +67,9 @@ class _MenuPageState extends State<MenuPage> {
   // Track loading state
   bool loading = false;
 
+  // Refresh button enabled
+  bool isRefreshButtonEnabled = true;
+
   // Generative model
   late final GenerativeModel model;
 
@@ -82,13 +89,15 @@ class _MenuPageState extends State<MenuPage> {
   List<NutritionData> _nutritionData = [];
 
   // Function to calculate daily nutrition
+  // Function to calculate daily nutrition
   Future<void> _calculateDailyNutrition() async {
     // Get the selected day
     DateTime selectedDay = _selectedDay!;
 
     // Fetch all items by date
-    List<MenuData> allItems =
-        await menuController.fetchItemsByDate(selectedDay);
+    List<MenuData> allItems = await menuController.fetchItemsByDate(
+      selectedDay,
+    );
 
     // Initialize the total nutrition values for calories
     int totalCalories = 0;
@@ -101,6 +110,9 @@ class _MenuPageState extends State<MenuPage> {
 
     // Initialize the total nutrition values for carbohydrates
     int totalCarbs = 0;
+
+    // Initialize the list to hold nutrition data
+    List<NutritionData> nutritionDataList = [];
 
     // Loop through all items
     for (var item in allItems) {
@@ -115,30 +127,44 @@ class _MenuPageState extends State<MenuPage> {
 
       // Add the carbohydrates
       totalCarbs += item.carbohydrate;
+
+      // Add the item nutrition data to the list
+      nutritionDataList.add(
+        NutritionData(
+          item.content,
+          item.calories,
+          Colors.purple,
+          mealName: item.mealType,
+          calories: item.calories,
+          fat: item.fat,
+          carbohydrates: item.carbohydrate,
+          protein: item.protein,
+        ),
+      );
     }
 
     // Set the nutrition data
     setState(() {
       // Set the nutrition data
-      _nutritionData = [
-        // Nutrition data for calories
-        NutritionData('calories'.tr(), totalCalories, Colors.purple),
-
-        // Nutrition data for protein
-        NutritionData('protein'.tr(), totalProtein, Colors.purple[300]!),
-
-        // Nutrition data for fat
-        NutritionData('fat'.tr(), totalFat, Colors.purple[200]!),
-
-        // Nutrition data for carbohydrates
-        NutritionData('carbohydrates'.tr(), totalCarbs, Colors.purple[100]!),
-      ];
+      _nutritionData = nutritionDataList;
     });
   }
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize the tab controller
+    _tabController = TabController(length: 2, vsync: this);
+
+    // Add listener to the tab controller for controlling the refresh button
+    _tabController.addListener(_handleTabChange);
+
+    // Initialize the generative model
+    model = generativeModel();
+
+    // Start chat session
+    chatSession = model.startChat();
 
     // Call the createInterstitialAd method
     showInterstitialAd();
@@ -148,12 +174,6 @@ class _MenuPageState extends State<MenuPage> {
 
     // Call the createInterstitialAd method
     createInterstitialAd();
-
-    // Initialize the generative model
-    model = generativeModel();
-
-    // Start chat session
-    chatSession = model.startChat();
 
     // Initialize the controller
     menuController = MenusController(AppDatabase());
@@ -176,6 +196,10 @@ class _MenuPageState extends State<MenuPage> {
 
   @override
   void dispose() {
+    // Dispose the tab controller
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+
     // Dispose the interstitial ad
     _interstitialAd?.dispose();
 
@@ -183,6 +207,19 @@ class _MenuPageState extends State<MenuPage> {
     _bannerAd?.dispose();
 
     super.dispose();
+  }
+
+  // Handle tab change
+  void _handleTabChange() {
+    // Check if the tab controller index is 0
+    if (_tabController.index == 1) {
+      // Set the refresh button enabled to true
+      setState(() => isRefreshButtonEnabled = false);
+    } else {
+      // Set the refresh button enabled to false
+      setState(() => isRefreshButtonEnabled = true);
+    }
+    debugPrint("Refresh: $isRefreshButtonEnabled");
   }
 
   // Function to create a banner ad
@@ -193,7 +230,7 @@ class _MenuPageState extends State<MenuPage> {
       size: AdSize.banner,
 
       // Ad unit ID for the banner ad
-      adUnitId:  "API_KEY",
+      adUnitId: "API_KEY",
 
       // Banner ad listener
       listener: BannerAdListener(
@@ -225,7 +262,7 @@ class _MenuPageState extends State<MenuPage> {
     // Initialize the interstitial ad
     InterstitialAd.load(
       // Set the ad unit id
-      adUnitId:  "API_KEY",
+      adUnitId: "API_KEY",
 
       // Set the ad
       request: const AdRequest(),
@@ -253,22 +290,7 @@ class _MenuPageState extends State<MenuPage> {
     if (_interstitialAd != null) {
       // Show the ad if it is loaded
       _interstitialAd?.show();
-      print('Showing Interstitial Ad');
-    } else {
-      // If ad is not loaded, print message
-      print('InterstitialAd is not ready yet.');
     }
-  }
-
-  // Extract nutrition values from the response
-  List<int> extractAverageNutritionValues(String response) {
-    final RegExp regex = RegExp(r'\d+-\d+');
-    final matches = regex.allMatches(response);
-
-    return matches.map((match) {
-      final range = match.group(0)!.split('-').map(int.parse).toList();
-      return (range[0] + range[1]) ~/ 2;
-    }).toList();
   }
 
   // Fetch menu items
@@ -283,27 +305,45 @@ class _MenuPageState extends State<MenuPage> {
     // Fetch menu items for breakfast, lunch, and dinner
     // Food items for breakfast
     breakfastItems = await menuController.fetchItemsByDateAndMeal(
-        selectedDay, 'Food', 'Breakfast');
+      selectedDay,
+      'Food',
+      'Breakfast',
+    );
 
     // Desserts for breakfast
     breakfastDesserts = await menuController.fetchItemsByDateAndMeal(
-        selectedDay, 'Dessert', 'Breakfast');
+      selectedDay,
+      'Dessert',
+      'Breakfast',
+    );
 
     // Food items for lunch
     lunchItems = await menuController.fetchItemsByDateAndMeal(
-        selectedDay, 'Food', 'Lunch');
+      selectedDay,
+      'Food',
+      'Lunch',
+    );
 
     // Desserts for lunch
     lunchDesserts = await menuController.fetchItemsByDateAndMeal(
-        selectedDay, 'Dessert', 'Lunch');
+      selectedDay,
+      'Dessert',
+      'Lunch',
+    );
 
     // Food items for dinner
     dinnerItems = await menuController.fetchItemsByDateAndMeal(
-        selectedDay, 'Food', 'Dinner');
+      selectedDay,
+      'Food',
+      'Dinner',
+    );
 
     // Desserts for dinner
     dinnerDesserts = await menuController.fetchItemsByDateAndMeal(
-        selectedDay, 'Dessert', 'Dinner');
+      selectedDay,
+      'Dessert',
+      'Dinner',
+    );
 
     await _calculateDailyNutrition();
 
@@ -346,7 +386,10 @@ class _MenuPageState extends State<MenuPage> {
 
   // Update menu item
   Future<void> updateMenuItem(
-      int id, String newContent, bool isMenuDetailUpdate) async {
+    int id,
+    String newContent,
+    bool isMenuDetailUpdate,
+  ) async {
     // Update menu item
     await menuController.updateMenuItem(id, newContent, isMenuDetailUpdate);
 
@@ -388,8 +431,9 @@ class _MenuPageState extends State<MenuPage> {
   // Edit menu item
   Future<void> _editMenuItem(BuildContext context, MenuData item) async {
     // Create a text editing controller
-    final TextEditingController controller =
-        TextEditingController(text: item.content);
+    final TextEditingController controller = TextEditingController(
+      text: item.content,
+    );
 
     // Show dialog
     return showDialog(
@@ -444,10 +488,11 @@ class _MenuPageState extends State<MenuPage> {
               },
 
               // Cancel button
-              child: const Text(
-                'cancel',
-                style: TextStyle(fontSize: 16.0, color: Colors.purple),
-              ).tr(),
+              child:
+                  const Text(
+                    'cancel',
+                    style: TextStyle(fontSize: 16.0, color: Colors.purple),
+                  ).tr(),
             ),
 
             // Press edit button
@@ -467,13 +512,18 @@ class _MenuPageState extends State<MenuPage> {
               icon: const Icon(Icons.update, color: Colors.white),
 
               // Set label
-              label: const Text('updateItem', style: TextStyle(fontSize: 16.0))
-                  .tr(),
+              label:
+                  const Text(
+                    'updateItem',
+                    style: TextStyle(fontSize: 16.0),
+                  ).tr(),
 
               // Set style
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 12.0),
+                  horizontal: 20.0,
+                  vertical: 12.0,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
                 ),
@@ -487,7 +537,10 @@ class _MenuPageState extends State<MenuPage> {
 
   // Add menu item
   Future<void> _addMenuItem(
-      BuildContext context, String mealType, String itemType) async {
+    BuildContext context,
+    String mealType,
+    String itemType,
+  ) async {
     // Create a text editing controller
     final TextEditingController contentController = TextEditingController();
 
@@ -544,8 +597,19 @@ class _MenuPageState extends State<MenuPage> {
                   final content = contentController.text;
 
                   // Save menu item
-                  await saveMenuItem(itemType, mealType, _selectedDay!, content,
-                      "", 0, 0, 0, 0, false, false);
+                  await saveMenuItem(
+                    itemType,
+                    mealType,
+                    _selectedDay!,
+                    content,
+                    "",
+                    0,
+                    0,
+                    0,
+                    0,
+                    false,
+                    false,
+                  );
 
                   // Pop the context
                   Navigator.of(context).pop();
@@ -561,9 +625,222 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
+  // Function to extract nutrition values from the AI response
+  List<int> extractNutritionValues(String response) {
+    final List<int> nutritionValues = [];
+    final RegExp regex = RegExp(r'(\d+)');
+    final matches = regex.allMatches(response);
+
+    for (final match in matches) {
+      final value = int.parse(match.group(1)!);
+      nutritionValues.add(value);
+    }
+
+    return nutritionValues;
+  }
+
+  // Function to update all items nutrition
+  Future<void> updateAllItemsNutrition() async {
+    if (!mounted) return;
+
+    // Fetch all menu items for the selected date
+    List<MenuData> allItems = await menuController.fetchItemsByDate(
+      _selectedDay!,
+    );
+
+    for (MenuData item in allItems) {
+      // Ask the AI for the nutrition values
+      String askNutrition = 'askNutrition'.tr(args: [item.content]);
+
+      try {
+        // Fetch the calories, protein, fat, and carbs from the AI
+        final nutritionResponse = await chatSession.sendMessage(
+          Content.text(askNutrition),
+        );
+
+        String response = nutritionResponse.text!.replaceAll(
+          RegExp(r'\*+'),
+          '',
+        );
+        debugPrint("Nutrition response: $response");
+
+        if (nutritionResponse.text != null) {
+          // Extract the nutrition values from the response
+          final nutritionValues = extractNutritionValues(response);
+
+          // Check if at least one nutrition value is valid
+          if (nutritionValues.isNotEmpty) {
+            // Assign the nutrition values based on the order
+            final calories =
+                nutritionValues.isNotEmpty ? nutritionValues[0] : 0;
+            final protein = nutritionValues.length > 1 ? nutritionValues[1] : 0;
+            final fat = nutritionValues.length > 2 ? nutritionValues[2] : 0;
+            final carbohydrates =
+                nutritionValues.length > 3 ? nutritionValues[3] : 0;
+
+            // Update the database with the new nutrition values
+            await menuController.updateMenuDetails(
+              item.id,
+              item.recipe, // Keep the existing recipe
+              false,
+              calories, // Calories
+              protein, // Protein
+              fat, // Fat
+              carbohydrates, // Carbs
+              false,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching nutrition for ${item.content}: $e");
+      }
+    }
+
+    // Refresh the menu items
+    await _fetchMenuItems();
+  }
+
+  // Show recipe dialog
+  Future<void> fetchAndShowRecipe(BuildContext context, MenuData item) async {
+    // Check if the widget is mounted
+    if (!mounted) return;
+
+    // Fetch the allergens
+    List<Allergen> allergen = await allergiesController.fetchAllergensItems();
+
+    // Ask the AI for the recipe
+    String askRecipe = 'whatIsRecipe'.tr(args: [item.content]);
+
+    // Check if the allergen is not empty
+    if (allergen.isNotEmpty) {
+      // Get the allergen string
+      String allergenString = allergen.map((e) => e.allergens).join(', ');
+
+      // Ask the AI for the recipe without allergens
+      askRecipe = 'whatIsRecipeWithoutAllergen'.tr(
+        args: [item.content, allergenString],
+      );
+    }
+
+    // Check if the recipe exists for the item in the database
+    if (item.recipe.isNotEmpty &&
+        !item.isMenuDetailUpdate &&
+        !item.isAllergensUpdated) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return recipeDialog(
+            context: context,
+            title: 'recipe'.tr(),
+            content: item.recipe,
+          );
+        },
+      );
+      return;
+    }
+
+    showAdDialog(context, () async {
+      showInterstitialAd();
+
+      // Show a loading dialog while fetching the recipe
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return recipeDialog(
+            context: context,
+            title: 'searchingForRecipe'.tr(),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('waitForRecipe'.tr()),
+              ],
+            ),
+          );
+        },
+      );
+
+      try {
+        // Fetch the recipe from the AI
+        final response = await chatSession.sendMessage(Content.text(askRecipe));
+
+        // Check if the widget is mounted
+        if (!mounted) return;
+
+        // If the response is not empty
+        if (response.text != null && response.text!.isNotEmpty) {
+          // Clean up the response
+          String newRecipe = response.text!.replaceAll(RegExp(r'\*+'), '');
+
+          // Update the database with the new recipe
+          await menuController.updateMenuDetails(
+            item.id,
+            newRecipe,
+            false,
+            0, // Calories
+            0, // Protein
+            0, // Fat
+            0, // Carbs
+            false,
+          );
+
+          // Refresh the menu items
+          await _fetchMenuItems();
+
+          // Close the loading dialog
+          Navigator.pop(context);
+
+          // Show the new recipe in a dialog
+          showDialog(
+            context: context,
+            builder: (context) {
+              return recipeDialog(
+                context: context,
+                title: 'recipe'.tr(),
+                content: newRecipe,
+              );
+            },
+          );
+        } else {
+          // Handle the case where AI returns an empty response
+          Navigator.pop(context); // Close the loading dialog
+          showDialog(
+            context: context,
+            builder: (context) {
+              return recipeDialog(
+                context: context,
+                title: 'noRecipeFound'.tr(),
+                content: 'aiCouldNotFindRecipe'.tr(),
+              );
+            },
+          );
+        }
+      } catch (e) {
+        // Handle errors (e.g., no internet connection)
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (context) {
+            return recipeDialog(
+              context: context,
+              title: 'somethingWentWrong'.tr(),
+              content: 'pleaseTryLater'.tr(),
+            );
+          },
+        );
+      }
+    });
+  }
+
   // Build meal section
-  Widget _buildMealSection(String title, List<MenuData> items, String mealType,
-      {bool isDessert = false}) {
+  Widget _buildMealSection(
+    String title,
+    List<MenuData> items,
+    String mealType, {
+    bool isDessert = false,
+  }) {
     // Set item type
     final itemType = isDessert ? 'Dessert' : 'Food';
 
@@ -607,10 +884,7 @@ class _MenuPageState extends State<MenuPage> {
 
                     // Set gradient
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.purple.shade500,
-                        Colors.purple.shade700,
-                      ],
+                      colors: [Colors.purple.shade500, Colors.purple.shade700],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -630,203 +904,14 @@ class _MenuPageState extends State<MenuPage> {
 
                     // Get recipe
                     trailing: IconButton(
-                        icon: const Icon(Icons.receipt_long_outlined,
-                            color: Colors.white),
-                        onPressed: () async {
-                          // Check if the widget is mounted
-                          if (!mounted) return;
-
-                          // Fetch the allergens
-                          List<Allergen> allergen =
-                              await allergiesController.fetchAllergensItems();
-
-                          // Ask the AI for the recipe
-                          String askRecipe =
-                              'whatIsRecipe'.tr(args: [item.content]);
-
-                          // Ask the AI for the nutrition values
-                          String askNutrition =
-                              'askNutrition'.tr(args: [item.content]);
-
-                          // Check if the allergen is not empty
-                          if (allergen.isNotEmpty) {
-                            // Get the allergen string
-                            String allergenString =
-                                allergen.map((e) => e.allergens).join(', ');
-
-                            // Ask the AI for the recipe without allergens
-                            askRecipe = 'whatIsRecipeWithoutAllergen'.tr(
-                              args: [item.content, allergenString],
-                            );
-
-                            // Ask the AI for the nutrition values without allergens
-                            askNutrition = 'askNutritionWithoutAllergen'.tr(
-                              args: [item.content, allergenString],
-                            );
-                          }
-
-                          // Check if the recipe exists for the item in the database
-                          if (item.recipe.isNotEmpty &&
-                              !item.isMenuDetailUpdate &&
-                              !item.isAllergensUpdated) {
-                            // Show the existing recipe in a dialog
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return recipeDialog(
-                                  context: context,
-                                  title: 'recipe'.tr(),
-                                  content: item.recipe,
-                                );
-                              },
-                            );
-
-                            return;
-                          }
-
-                          showAdDialog(context, () async {
-                            // Create interstitial ad
-                            showInterstitialAd();
-
-                            // Show a loading dialog while fetching the recipe
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) {
-                                // Return alert dialog for fetching recipe
-                                return recipeDialog(
-                                  context: context,
-                                  title: 'searchingForRecipe'.tr(),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const CircularProgressIndicator(),
-                                      const SizedBox(height: 16),
-                                      Text('waitForRecipe'.tr()),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-
-                            try {
-                              // Fetch the recipe from the AI
-                              final response = await chatSession.sendMessage(
-                                Content.text(askRecipe),
-                              );
-
-                              // Fetch the calories, protein, fat, and carbs from the AI
-                              final nutritionResponse = await chatSession
-                                  .sendMessage(Content.text(askNutrition));
-
-                              // Check if the nutrition response is not empty
-                              if (nutritionResponse.text != null) {
-                                // Extract the average nutrition values
-                                nutritionValues = extractAverageNutritionValues(
-                                    nutritionResponse.text!.replaceAll('*', ''));
-                              }
-
-                              // Check if the widget is mounted
-                              if (!mounted) return;
-
-                              // If the response is not empty
-                              if (response.text != null &&
-                                  response.text!.isNotEmpty) {
-                                // Separate the response by comma
-                                String newRecipe =
-                                    response.text!.replaceAll('*', '');
-
-                                // If all nutrition values are 0 or empty, do not update
-                                bool isNutritionValid =
-                                    nutritionValues.any((value) => value > 0);
-
-                                // Update the database with the new recipe
-                                if (isNutritionValid) {
-                                  // Update the database with the new recipe
-                                  await menuController.updateMenuDetails(
-                                    item.id,
-                                    newRecipe,
-                                    false,
-                                    nutritionValues[0],
-                                    // Calories
-                                    nutritionValues[1],
-                                    // Protein
-                                    nutritionValues[2],
-                                    // Fat
-                                    nutritionValues[3],
-                                    // Carbs
-                                    false,
-                                  );
-                                } else {
-                                  // If the nutrition values are not valid, do not update
-                                  await menuController.updateMenuDetails(
-                                    item.id,
-                                    newRecipe,
-                                    false,
-                                    0,
-                                    // Calories
-                                    0,
-                                    // Protein
-                                    0,
-                                    // Fat
-                                    0,
-                                    // Carbs
-                                    false,
-                                  );
-                                }
-
-                                // Refresh the menu items (or fetch the updated menu again)
-                                await _fetchMenuItems();
-
-                                // Close the loading dialog
-                                Navigator.pop(context);
-
-                                // Show the new recipe in a dialog
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return recipeDialog(
-                                      context: context,
-                                      title: 'recipe'.tr(),
-                                      content: newRecipe,
-                                    );
-                                  },
-                                );
-                              } else {
-                                // Handle the case where AI returns an empty response
-                                Navigator.pop(
-                                    context); // Close the loading dialog
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    // Return alert dialog for no recipe found
-                                    return recipeDialog(
-                                      context: context,
-                                      title: 'noRecipeFound'.tr(),
-                                      content: 'aiCouldNotFindRecipe'.tr(),
-                                    );
-                                  },
-                                );
-                              }
-                            } catch (e) {
-                              // Handle the case where there is no internet connection
-                              Navigator.pop(context);
-
-                              // Show dialog
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  // Return alert dialog for no internet connection
-                                  return recipeDialog(
-                                    context: context,
-                                    title: 'noRecipeFound'.tr(),
-                                    content: 'aiCouldNotFindRecipe'.tr(),
-                                  );
-                                },
-                              );
-                            }
-                          });
-                        }),
+                      icon: const Icon(
+                        Icons.receipt_long_outlined,
+                        color: Colors.white,
+                      ),
+                      onPressed: () async {
+                        await fetchAndShowRecipe(context, item);
+                      },
+                    ),
 
                     // Edit item
                     onTap: () {
@@ -837,17 +922,23 @@ class _MenuPageState extends State<MenuPage> {
                     // Delete item
                     onLongPress: () {
                       // Show delete dialog
-                      showDeleteDialog(context, "deleteItem".tr(),
-                          "delete".tr(), "cancel".tr(), () {
-                        // Delete menu item
-                        deleteMenuItem(item.id);
+                      showDeleteDialog(
+                        context,
+                        "deleteItem".tr(),
+                        "delete".tr(),
+                        "cancel".tr(),
+                        () {
+                          // Delete menu item
+                          deleteMenuItem(item.id);
 
-                        // Pop the context
-                        Navigator.of(context).pop();
-                      }, () {
-                        // Pop the context
-                        Navigator.of(context).pop();
-                      });
+                          // Pop the context
+                          Navigator.of(context).pop();
+                        },
+                        () {
+                          // Pop the context
+                          Navigator.of(context).pop();
+                        },
+                      );
                     },
                   ),
                 ),
@@ -867,27 +958,28 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-// Build method
+  // Build method
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          bottom: const TabBar(
-            tabs: [
-              Tab(
-                icon: Icon(Icons.food_bank_outlined),
-              ),
-              Tab(
-                icon: Icon(Icons.dashboard_outlined),
-              ),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.food_bank_outlined)),
+              Tab(icon: Icon(Icons.dashboard_outlined)),
             ],
           ),
-          toolbarHeight: 0, // Reduce the height of the AppBar
+
+          // Reduce the height of the AppBar
+          toolbarHeight: 0,
         ),
         // Make it scrollable
         body: TabBarView(
+          controller: _tabController,
           children: [
             SingleChildScrollView(
               child: Column(
@@ -896,8 +988,9 @@ class _MenuPageState extends State<MenuPage> {
                     padding: const EdgeInsets.all(8.0),
                     child: TableCalendar(
                       headerVisible: false,
-                      firstDay:
-                          DateTime.now().subtract(const Duration(days: 30)),
+                      firstDay: DateTime.now().subtract(
+                        const Duration(days: 30),
+                      ),
                       lastDay: DateTime.now().add(const Duration(days: 30)),
                       focusedDay: _focusedDay,
                       calendarFormat: CalendarFormat.week,
@@ -908,19 +1001,13 @@ class _MenuPageState extends State<MenuPage> {
                           color: Color(0xff6a0dad),
                           shape: BoxShape.circle,
                         ),
-                        weekendTextStyle: TextStyle(
-                          color: Color(0xff9370db),
-                        ),
+                        weekendTextStyle: TextStyle(color: Color(0xff9370db)),
                         selectedDecoration: BoxDecoration(
                           color: Color(0xff9370db),
                           shape: BoxShape.circle,
                         ),
-                        todayTextStyle: TextStyle(
-                          color: Color(0xffd8bfd8),
-                        ),
-                        selectedTextStyle: TextStyle(
-                          color: Color(0xffe6e6fa),
-                        ),
+                        todayTextStyle: TextStyle(color: Color(0xffd8bfd8)),
+                        selectedTextStyle: TextStyle(color: Color(0xffe6e6fa)),
                       ),
                       selectedDayPredicate: (day) {
                         // Return is same day
@@ -930,12 +1017,18 @@ class _MenuPageState extends State<MenuPage> {
                         // Set state
                         setState(() {
                           // Set selected day
-                          _selectedDay = DateTime(selectedDay.year,
-                              selectedDay.month, selectedDay.day);
+                          _selectedDay = DateTime(
+                            selectedDay.year,
+                            selectedDay.month,
+                            selectedDay.day,
+                          );
 
                           // Set focused day
-                          _focusedDay = DateTime(focusedDay.year,
-                              focusedDay.month, focusedDay.day);
+                          _focusedDay = DateTime(
+                            focusedDay.year,
+                            focusedDay.month,
+                            focusedDay.day,
+                          );
                         });
 
                         // Fetch menu items
@@ -955,62 +1048,210 @@ class _MenuPageState extends State<MenuPage> {
                       children: [
                         // Breakfast items
                         _buildMealSection(
-                            'breakfast'.tr(), breakfastItems, 'Breakfast'),
+                          'breakfast'.tr(),
+                          breakfastItems,
+                          'Breakfast',
+                        ),
 
                         // Breakfast desserts
-                        _buildMealSection('breakfastSnacks'.tr(),
-                            breakfastDesserts, 'Breakfast',
-                            isDessert: true),
+                        _buildMealSection(
+                          'breakfastSnacks'.tr(),
+                          breakfastDesserts,
+                          'Breakfast',
+                          isDessert: true,
+                        ),
 
                         // Lunch items
                         _buildMealSection('lunch'.tr(), lunchItems, 'Lunch'),
 
                         // Lunch desserts
                         _buildMealSection(
-                            'lunchSnacks'.tr(), lunchDesserts, 'Lunch',
-                            isDessert: true),
+                          'lunchSnacks'.tr(),
+                          lunchDesserts,
+                          'Lunch',
+                          isDessert: true,
+                        ),
 
                         // Dinner items
                         _buildMealSection('dinner'.tr(), dinnerItems, 'Dinner'),
 
                         // Dinner desserts
                         _buildMealSection(
-                            'dinnerSnacks'.tr(), dinnerDesserts, 'Dinner',
-                            isDessert: true),
+                          'dinnerSnacks'.tr(),
+                          dinnerDesserts,
+                          'Dinner',
+                          isDessert: true,
+                        ),
                       ],
                     ),
+
+                  // Give space
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
 
-	    // Nutrition Tab
+            // Nutrition Tab
             Padding(
+              // Padding
               padding: const EdgeInsets.all(16.0),
+
+              // Future builder
               child: FutureBuilder(
+                // Calculate daily nutrition
                 future: _calculateDailyNutrition(),
+
+                // Builder method
                 builder: (context, snapshot) {
+                  // Check if the snapshot has data
                   if (_nutritionData.isEmpty) {
+                    // Return center widget for no food in list
                     return Center(
-                      child: Text(
-                        'noNutritionData'.tr(),
-                        style: const TextStyle(fontSize: 18),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Text widget for no food in list
+                          Text(
+                            'noFoodinList'.tr(),
+                            style: const TextStyle(fontSize: 18),
+                          ),
+
+                          // Give space
+                          const SizedBox(height: 10),
+
+                          // Icon widget for no food in list
+                          const Icon(
+                            Icons.no_food_outlined,
+                            size: 30,
+                            color: Colors.grey,
+                          ),
+                        ],
                       ),
                     );
                   }
 
-                  return Column(
-                    children: [
-                      Text(
-                        'dailyNutrition'.tr(),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  // Return safe area
+                  return SafeArea(
+                    // Custom scroll view
+                    child: CustomScrollView(
+                      // Slivers for the scroll view
+                      slivers: [
+                        // Sliver app bar for the nutrition page
+                        SliverAppBar(
+                          pinned: true,
+                          floating: false,
+                          expandedHeight: 100.0,
+                          flexibleSpace: FlexibleSpaceBar(
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Text widget for daily nutrition
+                                Flexible(
+                                  child: Text(
+                                    'dailyNutrition'.tr(),
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    softWrap: true,
+                                    overflow: TextOverflow.visible,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.refresh),
+                                  onPressed: () async {
+                                    // Show interstitial ad
+                                    showInterstitialAd();
+
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (context) {
+                                        // Return alert dialog
+                                        return AlertDialog(
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              // Circular progress indicator
+                                              const CircularProgressIndicator(),
+
+                                              // Give space
+                                              const SizedBox(height: 16),
+
+                                              // Text widget for updating
+                                              const Text('updatingList').tr(),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    );
+
+                                    try {
+                                      // Update all items nutrition
+                                      await updateAllItemsNutrition();
+                                    } finally {
+                                      // Pop the context after updating
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      Expanded(child: buildNutritionChart(_nutritionData)),
-                      const SizedBox(height: 80),
-                    ],
+
+                        // Sliver fill remaining
+                        SliverFillRemaining(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: PageView(
+                              scrollDirection: Axis.vertical,
+                              children: [
+                                // SizedBox for horizontal nutrition bar
+                                SizedBox(
+                                  height: 220,
+                                  child: PageView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _nutritionData.length,
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8.0,
+                                        ),
+                                        child: perItemNutritionBar(
+                                          _nutritionData[index],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+
+                                // SizedBox for nutrition chart
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.6,
+                                  child: Column(
+                                    children: [
+                                      const SizedBox(height: 10),
+                                      Expanded(
+                                        child: totalNutritionChart(
+                                          _nutritionData,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -1019,32 +1260,35 @@ class _MenuPageState extends State<MenuPage> {
         ),
 
         // Add floating action button for asking AI for what can i make with existing items
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            showBottomSheet(
-                context: context,
-                showDragHandle: true,
-                enableDrag: true,
-                clipBehavior: Clip.antiAlias,
-                builder: (BuildContext build) {
-                  return const AiPage();
-                });
-          },
-          child: const Icon(
-            Icons.emoji_food_beverage,
-          ),
-        ),
+        floatingActionButton:
+            isRefreshButtonEnabled
+                ? FloatingActionButton(
+                  onPressed: () {
+                    // Show the bottom sheet for opening the AI page
+                    showBottomSheet(
+                      context: context,
+                      showDragHandle: true,
+                      enableDrag: true,
+                      clipBehavior: Clip.antiAlias,
+                      builder: (BuildContext build) {
+                        return const AiPage();
+                      },
+                    );
+                  },
+                  child: const Icon(Icons.emoji_food_beverage),
+                )
+                : null,
 
         // Display the banner ad at the bottom
-        bottomNavigationBar: _isLoaded
-            ? SizedBox(
-          height: _bannerAd!.size.height.toDouble(),
-          width: _bannerAd!.size.width.toDouble(),
-          child: AdWidget(ad: _bannerAd!),
-        )
-            : const SizedBox(),
+        bottomNavigationBar:
+            _isLoaded
+                ? SizedBox(
+                  height: _bannerAd!.size.height.toDouble(),
+                  width: _bannerAd!.size.width.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                )
+                : const SizedBox(),
       ),
     );
   }
 }
-

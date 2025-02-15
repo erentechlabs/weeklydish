@@ -27,6 +27,7 @@ class _NavPageState extends State<NavPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // App Bar
       appBar: AppBar(
         centerTitle: true,
         title: Text("Weekly Dish",
@@ -55,7 +56,6 @@ class _NavPageState extends State<NavPage> {
         currentIndex: currentIndex,
         onTap: (index) => setState(() => currentIndex = index),
         items: [
-
           // Menu
           BottomNavigationBarItem(
               icon: const Icon(Icons.menu_book_rounded), label: "menu".tr()),

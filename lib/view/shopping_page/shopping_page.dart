@@ -54,7 +54,9 @@ class _ShoppingPageState extends State<ShoppingPage> {
       size: AdSize.banner,
 
       // Ad unit ID for the banner ad
-      adUnitId:  "API_KEY",
+      adUnitId: Platform.isAndroid
+          ? 'ca-app-pub-6150876719010892/6480074053'
+          : 'ca-app-pub-6150876719010892/6478976570',
 
       // Banner ad listener
       listener: BannerAdListener(

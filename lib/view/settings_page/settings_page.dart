@@ -1,8 +1,8 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:launch_app_store/launch_app_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:store_launcher_plus/store_launcher_plus.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -141,10 +141,10 @@ class _SettingsPageState extends State<SettingsPage> {
               //    "manageSubscription".tr(), Icons.person_2_outlined, () {}),
               //_settingsButton(
               //   "giveFeedback".tr(), Icons.feedback_outlined, () {}),
-              _settingsButton("rateUs".tr(), Icons.reviews_outlined, () {
-                LaunchReview.launch(
-                    androidAppId: "com.Appsmiths.WeeklyDish",
-                    iOSAppId: "585027354");
+              _settingsButton("rateUs".tr(), Icons.reviews_outlined, () async {
+                await StoreLauncher.launchStore(
+                    packageName: "com.Appsmiths.WeeklyDish",
+                    appId: "585027354");
               }),
             ],
           ),
